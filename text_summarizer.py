@@ -7,8 +7,8 @@ logging.set_verbosity_error()
 
 from transformers import pipeline
 import torch
-import gc
 import os
+import gc
 
 # --- Function Definitions ---
 def load_text(txt_file: str) -> str:
@@ -48,23 +48,36 @@ def print_summary(summary: list) -> None:
     """
     print("Summary:", summary[0]['summary_text'])
 
+def cleanup_memory():
+    """
+    Frees up memory used by the summarizer model.
+    """
+    global summarizer
+    del summarizer
+    gc.collect()
 
 # --- Main Execution ---
 if __name__ == "__main__":
+    print("Loading summarization model...")
     # Load the summarization model
-    with pipeline("summarization", 
-                  model="facebook/bart-large-cnn",
-                  torch_dtype=torch.bfloat16) as summarizer:  
+    summarizer = pipeline("summarization", 
+                          model="facebook/bart-large-cnn",
+                          torch_dtype=torch.bfloat16)
+    print("Model loaded successfully.")
 
-        # Example text for summarization
-        try:
-            article = load_text("article.txt")   
-            print(article, "\n")
-            
-            summary = summarize(article, 130, 30)
-            print_summary(summary)
-        except FileNotFoundError as e:
-            print(e)
+    # Example text for summarization
+    try:
+        print("Loading article text...")
+        article = load_text("article.txt")   
+        print("Article loaded:\n", article, "\n")
+        
+        print("Summarizing article...")
+        summary = summarize(article, 130, 30)
+        print("Summary generated.")
+        
+        print_summary(summary)
+    except FileNotFoundError as e:
+        print(e)
 
     # Free up memory used by the summarizer model
-    gc.collect()
+    cleanup_memory()
